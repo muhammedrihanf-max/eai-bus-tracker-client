@@ -33,7 +33,12 @@ const Login = ({ onLogin }) => {
           setLoading(false);
           return;
         }
-        onLogin({ role, name: match.driver_name, vehicleId: match.vehicle_id });
+        onLogin({ 
+          ...match, 
+          role: 'driver', 
+          name: match.driver_name, 
+          phone: match.mobile_number 
+        });
       } catch {
         setError('Cannot reach server. Please try again.');
       }
