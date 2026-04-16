@@ -15,6 +15,9 @@ const Sidebar = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const vehicleList = Object.values(vehicles).filter(v => {
+    // Only show drivers in the active vehicles list
+    if (v.role !== 'driver') return false;
+    
     const vId = (v.vehicle_id || '').toLowerCase();
     const dName = (v.driver_name || '').toLowerCase();
     const search = searchTerm.toLowerCase();
