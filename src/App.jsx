@@ -38,7 +38,7 @@ function App() {
     setViewerLocation(coords);
 
     if (user) {
-      const trackingId = user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`;
+      const trackingId = user.role === 'admin' ? 'Admin' : (user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`);
       socket.emit('update_location', {
         vehicle_id: trackingId,
         driver_name: user.name,
@@ -126,7 +126,7 @@ function App() {
 
   const handleLogout = () => {
     if (user && socket) {
-      const vehicleId = user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`;
+      const vehicleId = user.role === 'admin' ? 'Admin' : (user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`);
       socket.emit('logout', vehicleId);
     }
     setUser(null);
