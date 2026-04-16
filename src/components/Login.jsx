@@ -100,7 +100,7 @@ const Login = ({ onLogin }) => {
       <div className="glass-panel" style={{
         padding: '3rem',
         borderRadius: '2rem',
-        width: '440px',
+        width: 'min(440px, 92vw)',
         textAlign: 'center',
         position: 'relative',
         zIndex: 1,

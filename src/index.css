@@ -12,6 +12,12 @@
   --sidebar-width: 320px;
 }
 
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 280px;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -64,11 +70,19 @@ body {
 }
 
 .sidebar.collapsed {
-  width: 0;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  border: none;
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
 }
 
 .sidebar-header {
@@ -244,4 +258,16 @@ body {
 .control-btn.active {
   color: var(--primary);
   border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .map-controls-overlay {
+    bottom: 1.5rem;
+    right: 1rem;
+  }
+  
+  .control-btn {
+    width: 44px;
+    height: 44px;
+  }
 }

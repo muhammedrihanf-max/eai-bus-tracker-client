@@ -32,15 +32,26 @@ const Sidebar = ({
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
         style={{
-          position: 'fixed', left: isCollapsed ? '1rem' : 'calc(var(--sidebar-width) + 1rem)', top: '1.5rem',
-          zIndex: 10000, padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--glass-border)',
-          backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(12px)', color: 'white',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          position: 'fixed', 
+          left: isCollapsed ? '1rem' : 'max(1rem, calc(var(--sidebar-width) - 2.5rem))', 
+          top: '1.5rem',
+          zIndex: 10001, 
+          padding: '0.6rem', 
+          borderRadius: '0.75rem', 
+          border: '1px solid var(--glass-border)',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+          backdropFilter: 'blur(12px)', 
+          color: 'white',
+          cursor: 'pointer', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
           boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
         }}
         title={isCollapsed ? "Show Sidebar" : "Hide Sidebar"}
       >
-        {isCollapsed ? <Plus size={20} style={{ transform: 'rotate(45deg)' }} /> : <X size={20} />}
+        {isCollapsed ? <Truck size={20} /> : <X size={20} />}
       </button>
 
       <aside className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`} style={{
