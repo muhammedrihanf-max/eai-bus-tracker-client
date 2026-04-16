@@ -1,7 +1,7 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, MapPin } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons in Leaflet with React
@@ -14,7 +14,7 @@ L.Icon.Default.mergeOptions({
 
 // Custom Icon Component
 const createCustomIcon = (vehicleId, role) => {
-  const isStaff = role === 'superadmin' || role === 'employee';
+  const isStaff = role === 'admin' || role === 'employee';
   const color = isStaff ? '#10b981' : '#3b82f6';
   
   return L.divIcon({
@@ -35,14 +35,21 @@ const createCustomIcon = (vehicleId, role) => {
   });
 };
 
-const RecenterMap = ({ lat, lng }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (lat && lng) {
-      map.flyTo([lat, lng], map.getZoom(), { duration: 1.5 });
-    }
-  }, [lat, lng, map]);
-  return null;
+const createStopIcon = () => {
+  return L.divIcon({
+    className: 'stop-marker',
+    html: `
+      <div class="marker-container">
+        <div class="marker-icon" style="background-color: white; overflow: hidden; padding: 2px; border: 2px solid #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);">
+          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ef4444;">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+        </div>
+      </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
 };
 
 const createViewerIcon = () => {
@@ -61,7 +68,38 @@ const createViewerIcon = () => {
   });
 };
 
-const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords }) => {
+const RecenterMap = ({ lat, lng }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (lat && lng) {
+      map.flyTo([lat, lng], map.getZoom(), { duration: 1.5 });
+    }
+  }, [lat, lng, map]);
+  return null;
+};
+
+const MapClickHandler = ({ user, onCreateStop }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const handleClick = (e) => {
+        const name = window.prompt('New Bus Stop Name:');
+        if (name) {
+          onCreateStop({
+            name,
+            lat: e.latlng.lat,
+            lng: e.latlng.lng
+          });
+        }
+      };
+      map.on('click', handleClick);
+      return () => map.off('click', handleClick);
+    }
+  }, [user, onCreateStop, map]);
+  return null;
+};
+
+const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, onCreateStop }) => {
   const defaultCenter = [25.2048, 55.2708]; // Dubai
   const selectedVehicle = selectedId ? vehicles[selectedId] : null;
 
@@ -89,10 +127,25 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords }) => {
                 <strong>{vehicle.vehicle_id}</strong><br />
                 Driver: {vehicle.driver_name}<br />
                 Speed: {vehicle.speed} km/h<br />
-                Last Update: {new Date(vehicle.timestamp).toLocaleTimeString()}<br />
-                {user.role === 'superadmin' && (
-                  <div style={{ marginTop: '0.5rem', borderTop: '1px solid #eee', paddingTop: '0.5rem' }}>
-                    <span style={{ color: 'blue', fontSize: '0.75rem' }}>Admin Tools Active</span>
+                Last Update: {new Date(vehicle.timestamp).toLocaleTimeString()}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Bus Stops */}
+        {(stops || []).map((stop) => (
+          <Marker 
+            key={stop.id}
+            position={[stop.lat, stop.lng]}
+            icon={createStopIcon()}
+          >
+            <Popup>
+              <div style={{ color: '#000' }}>
+                <strong>Bus Stop: {stop.name}</strong><br />
+                {user.role === 'admin' && (
+                  <div style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.75rem' }}>
+                    Tip: Click elsewhere on map to add more stops.
                   </div>
                 )}
               </div>
@@ -113,6 +166,10 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords }) => {
 
         {selectedVehicle && (
           <RecenterMap lat={selectedVehicle.lat} lng={selectedVehicle.lng} />
+        )}
+
+        {user.role === 'admin' && (
+          <MapClickHandler user={user} onCreateStop={onCreateStop} />
         )}
 
         <MapControls 

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Truck, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone } from 'lucide-react';
+import { Truck, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone, Flag, Clock } from 'lucide-react';
 import DriverModal from './DriverModal';
 
 const Sidebar = ({ 
   vehicles, drivers, onSelect, selectedId, user, onLogout, 
   isTracking, startTracking, stopTracking, geoError,
-  onCreateDriver, onUpdateDriver, onDeleteDriver
+  onCreateDriver, onUpdateDriver, onDeleteDriver,
+  stops, onCreateStop, onDeleteStop
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet' or 'users'
+  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'users', or 'stops'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -26,6 +27,20 @@ const Sidebar = ({
     const search = searchTerm.toLowerCase();
     return vId.includes(search) || dName.includes(search);
   });
+
+  // Haversine Distance Helper for Progress
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c * 1000; // meters
+  };
+
+  const selectedVehicle = selectedId ? vehicles[selectedId] : null;
 
   return (
     <>
@@ -110,19 +125,19 @@ const Sidebar = ({
             </div>
           </div>
           
-          {user.role === 'admin' && (
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.25rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid var(--glass-border)' }}>
-              <button 
-                onClick={() => setActiveTab('fleet')}
-                style={{
-                  flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer',
-                  backgroundColor: activeTab === 'fleet' ? 'var(--primary)' : 'transparent',
-                  color: activeTab === 'fleet' ? 'white' : 'var(--text-muted)',
-                  fontWeight: '700', fontSize: '0.8rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                }}
-              >
-                <Truck size={14} /> Fleet
-              </button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.25rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid var(--glass-border)' }}>
+            <button 
+              onClick={() => setActiveTab('fleet')}
+              style={{
+                flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer',
+                backgroundColor: activeTab === 'fleet' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'fleet' ? 'white' : 'var(--text-muted)',
+                fontWeight: '700', fontSize: '0.8rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              }}
+            >
+              <Truck size={14} /> Fleet
+            </button>
+            {user.role === 'admin' && (
               <button 
                 onClick={() => setActiveTab('users')}
                 style={{
@@ -134,14 +149,25 @@ const Sidebar = ({
               >
                 <Users size={14} /> Users
               </button>
-            </div>
-          )}
+            )}
+            <button 
+              onClick={() => setActiveTab('stops')}
+              style={{
+                flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer',
+                backgroundColor: activeTab === 'stops' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'stops' ? 'white' : 'var(--text-muted)',
+                fontWeight: '700', fontSize: '0.8rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              }}
+            >
+              <Flag size={14} /> Stops
+            </button>
+          </div>
 
           <div style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
             <div style={{ position: 'relative', marginBottom: '1rem' }}>
               <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
-                type="text" placeholder="Search vehicles or drivers..." value={searchTerm}
+                type="text" placeholder="Search..." value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', borderRadius: '0.75rem',
@@ -150,58 +176,16 @@ const Sidebar = ({
                 }}
               />
             </div>
-
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--glass-border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>GPS TRACKING</span>
-                <span style={{ 
-                  fontSize: '0.6rem', backgroundColor: isTracking ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  color: isTracking ? '#10b981' : '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontWeight: '700'
-                }}>
-                  {isTracking ? 'ACTIVE' : 'OFFLINE'}
-                </span>
-              </div>
-              <button
-                onClick={isTracking ? stopTracking : startTracking}
-                style={{
-                  width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: 'none',
-                  backgroundColor: isTracking ? '#ef4444' : 'var(--primary)', color: 'white',
-                  fontWeight: '700', cursor: 'pointer', fontSize: '0.8rem', transition: 'all 0.2s'
-                }}
-              >
-                {isTracking ? 'Stop Tracking' : 'Start My Location Tracking'}
-              </button>
-            </div>
           </div>
         </div>
         
         <div className="vehicle-list" style={{ flex: 1, overflowY: 'auto', padding: '0 1.5rem 1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
-              {activeTab === 'fleet' ? `Active Fleet (${vehicleList.length})` : `Driver Accounts (${driverList.length})`}
-            </div>
-            {activeTab === 'users' && user.role === 'admin' && (
-              <button 
-                onClick={() => { setEditingDriver(null); setIsModalOpen(true); }}
-                style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)',
-                  color: 'var(--primary)', padding: '0.3rem 0.6rem', borderRadius: '0.5rem',
-                  fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                }}
-              >
-                <Plus size={14} /> Add Driver
-              </button>
-            )}
-          </div>
-          
-          {activeTab === 'fleet' ? (
-            vehicleList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                <Truck size={32} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                <p style={{ fontSize: '0.85rem' }}>No active vehicles</p>
+          {activeTab === 'fleet' && (
+            <>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '0.75rem' }}>
+                Active Fleet ({vehicleList.length})
               </div>
-            ) : (
-              vehicleList.map((item) => (
+              {vehicleList.map((item) => (
                 <div 
                   key={item.vehicle_id}
                   className={`vehicle-item ${selectedId === item.vehicle_id ? 'active' : ''}`}
@@ -219,47 +203,85 @@ const Sidebar = ({
                       <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: '700' }}>LIVE</span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                      <User size={14} /> <span>{item.driver_name}</span>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    <User size={14} /> <span>{item.driver_name}</span>
                   </div>
                 </div>
-              ))
-            )
-          ) : (
-            driverList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                <Users size={32} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                <p style={{ fontSize: '0.85rem' }}>No driver accounts found</p>
+              ))}
+            </>
+          )}
+
+          {activeTab === 'users' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
+                  Driver Accounts ({driverList.length})
+                </div>
+                <button onClick={() => { setEditingDriver(null); setIsModalOpen(true); }} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--primary)', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.70rem', fontWeight: '700', cursor: 'pointer' }}>+ Add</button>
               </div>
-            ) : (
-              driverList.map((d) => (
+              {driverList.map((d) => (
                 <div key={d.id} style={{ padding: '1rem', borderRadius: '1rem', marginBottom: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--glass-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--primary)' }}>
-                        <User size={18} />
-                      </div>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: '700', color: 'white', fontSize: '0.9rem' }}>{d.driver_name}</div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{d.vehicle_id}</div>
-                        {d.mobile_number && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.75rem', marginTop: '0.2rem' }}>
-                            <Phone size={10} />
-                            <span>{d.mobile_number}</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => { setEditingDriver(d); setIsModalOpen(true); }} style={{ padding: '0.4rem', borderRadius: '0.4rem', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: '#94a3b8', cursor: 'pointer' }}><Edit2 size={14} /></button>
-                      <button onClick={() => { if(window.confirm('Delete this account?')) onDeleteDriver(d.id); }} style={{ padding: '0.4rem', borderRadius: '0.4rem', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={14} /></button>
-                    </div>
-                  </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => { setEditingDriver(d); setIsModalOpen(true); }} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Edit2 size={14} /></button>
+                        <button onClick={() => { if(window.confirm('Delete?')) onDeleteDriver(d.id); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                      </div>
+                   </div>
                 </div>
-              ))
-            )
+              ))}
+            </>
+          )}
+
+          {activeTab === 'stops' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
+                  Trip Progress
+                </div>
+                {user.role === 'admin' && (
+                  <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '600' }}>Click map to add</span>
+                )}
+              </div>
+              
+              {selectedVehicle ? (
+                <div style={{ position: 'relative', paddingLeft: '1.5rem', borderLeft: '2px dashed rgba(255,255,255,0.1)', marginLeft: '0.5rem' }}>
+                  {(stops || []).map((stop, index) => {
+                    const distance = calculateDistance(selectedVehicle.lat, selectedVehicle.lng, stop.lat, stop.lng);
+                    const isArrived = distance < 100;
+
+                    return (
+                      <div key={stop.id} style={{ marginBottom: '1.5rem', position: 'relative' }}>
+                        <div style={{
+                          position: 'absolute', left: '-1.9rem', top: '0', width: '12px', height: '12px',
+                          borderRadius: '50%', backgroundColor: isArrived ? '#10b981' : '#334155',
+                          border: `2px solid ${isArrived ? '#10b981' : '#475569'}`,
+                          boxShadow: isArrived ? '0 0 10px #10b981' : 'none'
+                        }}></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <div style={{ fontWeight: '700', color: isArrived ? '#10b981' : 'white', fontSize: '0.85rem' }}>{stop.name}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
+                              <Clock size={10} /> {isArrived ? 'Arrived' : `${(distance/1000).toFixed(1)} km away`}
+                            </div>
+                          </div>
+                          {user.role === 'admin' && (
+                            <button onClick={() => onDeleteStop(stop.id)} style={{ background: 'none', border: 'none', color: '#ef4444', opacity: 0.5, cursor: 'pointer' }}><Trash2 size={12} /></button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '1rem', border: '1px dashed var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Select a vehicle to see progress</p>
+                </div>
+              )}
+            </>
           )}
         </div>
         <DriverModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} editingDriver={editingDriver} onSave={(data) => { if (editingDriver) onUpdateDriver(data); else onCreateDriver(data); }} />

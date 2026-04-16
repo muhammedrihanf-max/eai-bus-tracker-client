@@ -25,6 +25,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 function App() {
   const [vehicles, setVehicles] = useState({});
   const [drivers, setDrivers] = useState([]);
+  const [stops, setStops] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [user, setUser] = useState(null);
   const [viewerLocation, setViewerLocation] = useState(null);
@@ -51,6 +52,7 @@ function App() {
   useEffect(() => {
     socket.on('initial_positions', (data) => setVehicles(data));
     socket.on('drivers_list', (data) => setDrivers(data));
+    socket.on('stops_list', (data) => setStops(data));
     
     socket.on('location_updated', (data) => {
       setVehicles(prev => ({ ...prev, [data.vehicle_id]: data }));
@@ -59,6 +61,7 @@ function App() {
     return () => {
       socket.off('initial_positions');
       socket.off('drivers_list');
+      socket.off('stops_list');
       socket.off('location_updated');
     };
   }, []);
@@ -66,6 +69,9 @@ function App() {
   const handleCreateDriver = (driverData) => socket.emit('create_driver', driverData);
   const handleUpdateDriver = (driverData) => socket.emit('update_driver', driverData);
   const handleDeleteDriver = (id) => socket.emit('delete_driver', id);
+  
+  const handleCreateStop = (stopData) => socket.emit('create_stop', stopData);
+  const handleDeleteStop = (id) => socket.emit('delete_stop', id);
 
   const handleVehicleSelect = (id) => {
     setSelectedVehicleId(id);
@@ -143,6 +149,9 @@ function App() {
         onCreateDriver={handleCreateDriver}
         onUpdateDriver={handleUpdateDriver}
         onDeleteDriver={handleDeleteDriver}
+        stops={stops}
+        onCreateStop={handleCreateStop}
+        onDeleteStop={handleDeleteStop}
       />
       <div className="map-container">
         <MapView 
@@ -151,6 +160,8 @@ function App() {
           user={user}
           isTracking={isTracking}
           viewerCoords={viewerLocation}
+          stops={stops}
+          onCreateStop={handleCreateStop}
         />
       </div>
 
