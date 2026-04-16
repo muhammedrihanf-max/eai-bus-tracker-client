@@ -58,11 +58,20 @@ function App() {
       setVehicles(prev => ({ ...prev, [data.vehicle_id]: data }));
     });
 
+    socket.on('vehicle_removed', (vehicleId) => {
+      setVehicles(prev => {
+        const newVehicles = { ...prev };
+        delete newVehicles[vehicleId];
+        return newVehicles;
+      });
+    });
+
     return () => {
       socket.off('initial_positions');
       socket.off('drivers_list');
       socket.off('stops_list');
       socket.off('location_updated');
+      socket.off('vehicle_removed');
     };
   }, []);
 
@@ -85,6 +94,13 @@ function App() {
   };
 
   const handleLogout = () => {
+    if (user && socket && (user.role === 'driver' || (user.role === 'admin' && user.id))) {
+      // If the user has a vehicle ID associated (drivers do), tell the server to remove them
+      const vehicleId = user.role === 'driver' ? user.vehicle_id : null;
+      if (vehicleId) {
+        socket.emit('logout', vehicleId);
+      }
+    }
     setUser(null);
     setSelectedVehicleId(null);
     if (isTracking) stopTracking();
