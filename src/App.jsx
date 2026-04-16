@@ -90,6 +90,13 @@ function App() {
     if (isTracking) stopTracking();
   };
 
+  // Auto-Start Tracking on Login
+  useEffect(() => {
+    if (user && !isTracking) {
+      startTracking();
+    }
+  }, [user, isTracking, startTracking]);
+
   // Proximity Detection Effect
   useEffect(() => {
     if ((user?.role === 'employee' || user?.role === 'admin') && viewerLocation && Object.keys(vehicles).length > 0) {
