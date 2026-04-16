@@ -13,15 +13,16 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom Icon Component
-const createCustomIcon = (vehicleId, role) => {
+const createCustomIcon = (vehicleId, role, vehicles) => {
   const isStaff = role === 'admin' || role === 'employee';
-  const color = isStaff ? '#10b981' : '#3b82f6';
+  const isSpeeding = !isStaff && (vehicles?.[vehicleId]?.speed > 80);
+  const color = isStaff ? '#10b981' : (isSpeeding ? '#ef4444' : '#3b82f6');
   
   return L.divIcon({
     className: 'custom-marker',
     html: `
       <div class="marker-container">
-        <div class="marker-pulse" style="background-color: ${color}"></div>
+        <div class="marker-pulse" style="background-color: ${color}; ${isSpeeding ? 'animation: pulse-danger 1.5s infinite;' : ''}"></div>
         <div class="marker-icon" style="background-color: white; overflow: hidden; padding: 2px; border: 2px solid ${color}; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
           ${isStaff 
             ? `<img src="/employee-logo.jpg" style="width: 100%; height: 100%; object-fit: contain; image-rendering: -webkit-optimize-contrast;" alt="Staff" />`
@@ -111,6 +112,13 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
 
   return (
     <div className="map-container">
+      <style>{`
+        @keyframes pulse-danger {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+      `}</style>
       <MapContainer 
         center={defaultCenter} 
         zoom={13} 
@@ -126,7 +134,7 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
           <React.Fragment key={vehicle.vehicle_id}>
             <Marker 
               position={[vehicle.lat, vehicle.lng]}
-              icon={createCustomIcon(vehicle.vehicle_id, vehicle.role)}
+              icon={createCustomIcon(vehicle.vehicle_id, vehicle.role, vehicles)}
             >
               <Popup>
                 <div style={{ color: '#000' }}>

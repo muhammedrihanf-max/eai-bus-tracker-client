@@ -205,6 +205,11 @@ const Sidebar = ({
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     <User size={14} /> <span>{item.driver_name}</span>
+                    {item.speed > 80 && (
+                       <span style={{ marginLeft: 'auto', color: '#ef4444', fontWeight: '800', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                         ⚠️ {item.speed} km/h
+                       </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -265,7 +270,15 @@ const Sidebar = ({
                           <div>
                             <div style={{ fontWeight: '700', color: isArrived ? '#10b981' : 'white', fontSize: '0.85rem' }}>{stop.name}</div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
-                              <Clock size={10} /> {isArrived ? 'Arrived' : `${(distance/1000).toFixed(1)} km away`}
+                              <Clock size={10} /> 
+                              {isArrived ? 'Arrived' : (
+                                <>
+                                  {(distance/1000).toFixed(1)} km away 
+                                  <span style={{ color: 'var(--primary)', opacity: 0.8 }}>
+                                    • {Math.round((distance/1000) / ((selectedVehicle.speed > 5 ? selectedVehicle.speed : 20) / 60))} mins
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                           {user.role === 'admin' && (

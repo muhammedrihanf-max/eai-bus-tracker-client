@@ -75,6 +75,30 @@ function App() {
     };
   }, []);
 
+  const [hasNotifiedProximity, setHasNotifiedProximity] = useState({});
+
+  // Proximity Detection Effect
+  useEffect(() => {
+    if ((user?.role === 'employee' || user?.role === 'admin') && viewerLocation && selectedVehicleId && vehicles[selectedVehicleId]) {
+      const selectedVehicle = vehicles[selectedVehicleId];
+      const distance = calculateDistance(
+        viewerLocation.lat, viewerLocation.lng,
+        selectedVehicle.lat, selectedVehicle.lng
+      );
+
+      // Notify if within 500m and not notified yet for this specific vehicle/session
+      if (distance < 500 && !hasNotifiedProximity[selectedVehicleId]) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Bus is Nearby!', {
+            body: `${selectedVehicle.driver_name} is less than 500m away. Get ready for pickup!`,
+            icon: '/driver-logo.png'
+          });
+          setHasNotifiedProximity(prev => ({ ...prev, [selectedVehicleId]: true }));
+        }
+      }
+    }
+  }, [user, viewerLocation, selectedVehicleId, vehicles, hasNotifiedProximity]);
+
   const handleCreateDriver = (driverData) => socket.emit('create_driver', driverData);
   const handleUpdateDriver = (driverData) => socket.emit('update_driver', driverData);
   const handleDeleteDriver = (id) => socket.emit('delete_driver', id);
@@ -105,6 +129,13 @@ function App() {
     setSelectedVehicleId(null);
     if (isTracking) stopTracking();
   };
+
+  // Request Notification Permission on Login
+  useEffect(() => {
+    if (user && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, [user]);
 
   // Auto-Start Tracking on Login
   useEffect(() => {
