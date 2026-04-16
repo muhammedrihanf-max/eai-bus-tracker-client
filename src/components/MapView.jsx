@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Crosshair, MapPin } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
@@ -123,20 +123,34 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
         />
         
         {Object.values(vehicles).map((vehicle) => (
-          <Marker 
-            key={vehicle.vehicle_id}
-            position={[vehicle.lat, vehicle.lng]}
-            icon={createCustomIcon(vehicle.vehicle_id, vehicle.role)}
-          >
-            <Popup>
-              <div style={{ color: '#000' }}>
-                <strong>{vehicle.vehicle_id}</strong><br />
-                Driver: {vehicle.driver_name}<br />
-                Speed: {vehicle.speed} km/h<br />
-                Last Update: {new Date(vehicle.timestamp).toLocaleTimeString()}
-              </div>
-            </Popup>
-          </Marker>
+          <React.Fragment key={vehicle.vehicle_id}>
+            <Marker 
+              position={[vehicle.lat, vehicle.lng]}
+              icon={createCustomIcon(vehicle.vehicle_id, vehicle.role)}
+            >
+              <Popup>
+                <div style={{ color: '#000' }}>
+                  <strong>{vehicle.vehicle_id}</strong><br />
+                  Driver: {vehicle.driver_name}<br />
+                  Speed: {vehicle.speed} km/h<br />
+                  Last Update: {new Date(vehicle.timestamp).toLocaleTimeString()}
+                </div>
+              </Popup>
+            </Marker>
+            
+            {/* Traveled Path (Line) */}
+            {vehicle.path && vehicle.path.length > 1 && (
+              <Polyline 
+                positions={vehicle.path}
+                pathOptions={{ 
+                  color: (vehicle.role === 'admin' || vehicle.role === 'employee') ? '#10b981' : '#3b82f6',
+                  weight: 4,
+                  opacity: 0.6,
+                  dashArray: '10, 10'
+                }}
+              />
+            )}
+          </React.Fragment>
         ))}
 
         {/* Bus Stops */}
