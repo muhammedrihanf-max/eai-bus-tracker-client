@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone, Flag, Clock } from 'lucide-react';
+import { Car, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone, Flag, Clock } from 'lucide-react';
 import DriverModal from './DriverModal';
 
 const Sidebar = ({ 
@@ -66,7 +66,7 @@ const Sidebar = ({
         }}
         title={isCollapsed ? "Show Sidebar" : "Hide Sidebar"}
       >
-        {isCollapsed ? <Truck size={20} /> : <X size={20} />}
+        {isCollapsed ? <Car size={20} /> : <X size={20} />}
       </button>
 
       <aside className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`} style={{
@@ -115,7 +115,7 @@ const Sidebar = ({
                 {(user.role === 'admin' || user.role === 'employee') ? (
                   <img src="/employee-logo.jpg" style={{ width: '100%', height: '100%', objectDistance: 'cover' }} alt="Profile" />
                 ) : (
-                  <Truck size={22} color="#f59e0b" />
+                  <Car size={22} color="#f59e0b" />
                 )}
               </div>
               <div>
@@ -135,7 +135,7 @@ const Sidebar = ({
                 fontWeight: '700', fontSize: '0.8rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
               }}
             >
-              <Truck size={14} /> Vehicle
+              <Car size={14} /> Vehicle
             </button>
             {user.role === 'admin' && (
               <button 

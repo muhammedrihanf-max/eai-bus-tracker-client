@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, User, Truck, Navigation, ArrowRight, ChevronDown, AlertCircle, Lock } from 'lucide-react';
+import { Shield, User, Car, Navigation, ArrowRight, ChevronDown, AlertCircle, Lock } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [role, setRole] = useState(null);

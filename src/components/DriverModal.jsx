@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, User, Truck, Phone } from 'lucide-react';
+import { X, Save, User, Car, Phone } from 'lucide-react';
 
 const DriverModal = ({ isOpen, onClose, onSave, editingDriver }) => {
   const [name, setName] = useState(editingDriver?.driver_name || '');
@@ -61,7 +61,7 @@ const DriverModal = ({ isOpen, onClose, onSave, editingDriver }) => {
           <div>
             <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', display: 'block' }}>Vehicle ID (Plate No.)</label>
             <div style={{ position: 'relative' }}>
-              <Truck size={18} color="#64748b" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <Car size={18} color="#64748b" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
                 type="text" 
                 value={vehicleId}
