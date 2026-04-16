@@ -26,6 +26,7 @@ function App() {
   const [vehicles, setVehicles] = useState({});
   const [drivers, setDrivers] = useState([]);
   const [stops, setStops] = useState([]);
+  const [overspeedLogs, setOverspeedLogs] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [user, setUser] = useState(null);
   const [viewerLocation, setViewerLocation] = useState(null);
@@ -37,10 +38,11 @@ function App() {
     setViewerLocation(coords);
 
     if (user) {
-      const trackingId = user.role === 'driver' ? user.vehicleId : `STAFF-${user.name.replace(/\s+/g, '-')}`;
+      const trackingId = user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`;
       socket.emit('update_location', {
         vehicle_id: trackingId,
         driver_name: user.name,
+        phone: user.mobile || user.phone || '',
         role: user.role,
         ...coords
       });
@@ -53,6 +55,7 @@ function App() {
     socket.on('initial_positions', (data) => setVehicles(data));
     socket.on('drivers_list', (data) => setDrivers(data));
     socket.on('stops_list', (data) => setStops(data));
+    socket.on('overspeed_logs', (data) => setOverspeedLogs(data));
     
     socket.on('location_updated', (data) => {
       setVehicles(prev => ({ ...prev, [data.vehicle_id]: data }));
@@ -72,32 +75,36 @@ function App() {
       socket.off('stops_list');
       socket.off('location_updated');
       socket.off('vehicle_removed');
+      socket.off('overspeed_logs');
     };
   }, []);
 
-  const [hasNotifiedProximity, setHasNotifiedProximity] = useState({});
-
-  // Proximity Detection Effect
+  // Proximity Detection Effect (Unified)
   useEffect(() => {
-    if ((user?.role === 'employee' || user?.role === 'admin') && viewerLocation && selectedVehicleId && vehicles[selectedVehicleId]) {
-      const selectedVehicle = vehicles[selectedVehicleId];
-      const distance = calculateDistance(
-        viewerLocation.lat, viewerLocation.lng,
-        selectedVehicle.lat, selectedVehicle.lng
-      );
+    if ((user?.role === 'employee' || user?.role === 'admin') && viewerLocation && Object.keys(vehicles).length > 0) {
+      Object.entries(vehicles).forEach(([id, vehicle]) => {
+        if (!notifiedVehicles.has(id)) {
+          const distance = calculateDistance(
+            viewerLocation.lat, viewerLocation.lng,
+            vehicle.lat, vehicle.lng
+          );
 
-      // Notify if within 500m and not notified yet for this specific vehicle/session
-      if (distance < 500 && !hasNotifiedProximity[selectedVehicleId]) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('Bus is Nearby!', {
-            body: `${selectedVehicle.driver_name} is less than 500m away. Get ready for pickup!`,
-            icon: '/driver-logo.png'
-          });
-          setHasNotifiedProximity(prev => ({ ...prev, [selectedVehicleId]: true }));
+          if (distance <= 500) { // 500m Radius
+            const message = `Bus ${vehicle.vehicle_id} (${vehicle.driver_name}) is less than 500m away!`;
+            setAlerts(prev => [...prev, { id: Date.now() + Math.random(), message }]);
+            
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("EAI BUS TRACKER", {
+                body: message,
+                icon: "/driver-logo.png"
+              });
+            }
+            setNotifiedVehicles(prev => new Set([...prev, id]));
+          }
         }
-      }
+      });
     }
-  }, [user, viewerLocation, selectedVehicleId, vehicles, hasNotifiedProximity]);
+  }, [vehicles, viewerLocation, notifiedVehicles, user]);
 
   const handleCreateDriver = (driverData) => socket.emit('create_driver', driverData);
   const handleUpdateDriver = (driverData) => socket.emit('update_driver', driverData);
@@ -113,29 +120,26 @@ function App() {
   const handleLogin = (userData) => {
     setUser(userData);
     if (userData.role === 'driver') {
-      setSelectedVehicleId(userData.vehicleId);
+      setSelectedVehicleId(userData.vehicle_id);
     }
   };
 
   const handleLogout = () => {
-    if (user && socket && (user.role === 'driver' || (user.role === 'admin' && user.id))) {
-      // If the user has a vehicle ID associated (drivers do), tell the server to remove them
-      const vehicleId = user.role === 'driver' ? user.vehicle_id : null;
-      if (vehicleId) {
-        socket.emit('logout', vehicleId);
-      }
+    if (user && socket) {
+      const vehicleId = user.role === 'driver' ? user.vehicle_id : `STAFF-${user.name.replace(/\s+/g, '-')}`;
+      socket.emit('logout', vehicleId);
     }
     setUser(null);
     setSelectedVehicleId(null);
     if (isTracking) stopTracking();
   };
 
-  // Request Notification Permission on Login
+  // Global Notification Permission Request
   useEffect(() => {
-    if (user && 'Notification' in window && Notification.permission === 'default') {
+    if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
-  }, [user]);
+  }, []);
 
   // Auto-Start Tracking on Login
   useEffect(() => {
@@ -144,47 +148,12 @@ function App() {
     }
   }, [user, isTracking, startTracking]);
 
-  // Proximity Detection Effect
-  useEffect(() => {
-    if ((user?.role === 'employee' || user?.role === 'admin') && viewerLocation && Object.keys(vehicles).length > 0) {
-      Object.entries(vehicles).forEach(([id, vehicle]) => {
-        if (!notifiedVehicles.has(id)) {
-          const distance = calculateDistance(
-            viewerLocation.lat, viewerLocation.lng,
-            vehicle.lat, vehicle.lng
-          );
-
-          if (distance <= 1000) { // 1 Km Radius
-            const message = `Vehicle ${vehicle.vehicle_id} (${vehicle.driver_name}) is near to you (${Math.round(distance)}m). Get ready!`;
-            setAlerts(prev => [...prev, { id: Date.now() + Math.random(), message }]);
-            
-            if ("Notification" in window && Notification.permission === "granted") {
-              new Notification("EAI BUS TRACKER: Vehicle Near You", {
-                body: message,
-                icon: "/employee-logo.jpg"
-              });
-            }
-            setNotifiedVehicles(prev => new Set([...prev, id]));
-          }
-        }
-      });
-    }
-  }, [vehicles, viewerLocation, notifiedVehicles, user]);
-
-  // Request Notification Permission
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
-  }, []);
-
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
-  // Refined filtering: Drivers see only themselves, Admins/Employees see everyone
   const filteredVehicles = user.role === 'driver'
-    ? Object.fromEntries(Object.entries(vehicles).filter(([id]) => id === user.vehicleId))
+    ? Object.fromEntries(Object.entries(vehicles).filter(([id]) => id === user.vehicle_id))
     : vehicles;
 
   return (
@@ -206,6 +175,7 @@ function App() {
         stops={stops}
         onCreateStop={handleCreateStop}
         onDeleteStop={handleDeleteStop}
+        overspeedLogs={overspeedLogs}
       />
       <div className="map-container">
         <MapView 

@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { Car, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone, Flag, Clock } from 'lucide-react';
+import { Car, Navigation, Shield, User, LogOut, Search, Users, Plus, Edit2, Trash2, X, Phone, Flag, Clock, Download, ChevronRight, ChevronLeft } from 'lucide-react';
 import DriverModal from './DriverModal';
 
 const Sidebar = ({ 
   vehicles, drivers, onSelect, selectedId, user, onLogout, 
   isTracking, startTracking, stopTracking, geoError,
   onCreateDriver, onUpdateDriver, onDeleteDriver,
-  stops, onCreateStop, onDeleteStop
+  stops, onCreateStop, onDeleteStop, overspeedLogs
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'users', or 'stops'
@@ -48,25 +47,27 @@ const Sidebar = ({
         onClick={() => setIsCollapsed(!isCollapsed)}
         style={{
           position: 'fixed', 
-          left: isCollapsed ? '1rem' : 'max(1rem, calc(var(--sidebar-width) - 2.5rem))', 
-          top: '1.5rem',
+          left: isCollapsed ? '1rem' : '330px', 
+          top: '50%',
+          transform: 'translateY(-50%)',
           zIndex: 10001, 
-          padding: '0.6rem', 
-          borderRadius: '0.75rem', 
-          border: '1px solid var(--glass-border)',
-          backgroundColor: 'rgba(15, 23, 42, 0.9)', 
-          backdropFilter: 'blur(12px)', 
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%', 
+          border: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: 'rgba(30, 41, 59, 0.9)', 
+          backdropFilter: 'blur(10px)', 
           color: 'white',
           cursor: 'pointer', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
         }}
         title={isCollapsed ? "Show Sidebar" : "Hide Sidebar"}
       >
-        {isCollapsed ? <Car size={20} /> : <X size={20} />}
+        {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
       </button>
 
       <aside className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`} style={{
@@ -162,6 +163,37 @@ const Sidebar = ({
               <Flag size={14} /> Stops
             </button>
           </div>
+
+          {user.role === 'admin' && (
+            <div style={{ padding: '0 0 1rem', display: 'flex', justifyContent: 'center' }}>
+              <button 
+                onClick={() => {
+                  if (!overspeedLogs || overspeedLogs.length === 0) {
+                    alert("No speeding logs recorded yet.");
+                    return;
+                  }
+                  const header = "Date\tTime\tDriver\tVehicle ID\tSpeed\tLocation\n";
+                  const rows = overspeedLogs.map(l => {
+                    const d = new Date(l.timestamp);
+                    return `${d.toLocaleDateString()}\t${d.toLocaleTimeString()}\t${l.driver_name}\t${l.vehicle_id}\t${l.speed}km/h\t${l.lat.toFixed(6)}, ${l.lng.toFixed(6)}`;
+                  }).join("\n");
+                  const blob = new Blob([header + rows], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Speeding_Logs_${new Date().toISOString().split('T')[0]}.txt`;
+                  a.click();
+                }}
+                style={{
+                  width: '100%', padding: '0.6rem', borderRadius: '0.75rem', border: '1px solid rgba(239, 68, 68, 0.3)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: '700', fontSize: '0.75rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer'
+                }}
+              >
+                <Download size={14} /> Export Speeding Logs
+              </button>
+            </div>
+          )}
 
           <div style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
             <div style={{ position: 'relative', marginBottom: '1rem' }}>

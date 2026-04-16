@@ -75,13 +75,27 @@ const createViewerIcon = (role) => {
   });
 };
 
-const RecenterMap = ({ lat, lng }) => {
+const RecenterMap = ({ lat, lng, isTracking }) => {
   const map = useMap();
+  const lastCenter = React.useRef(null);
+
   useEffect(() => {
     if (lat && lng) {
-      map.flyTo([lat, lng], map.getZoom(), { duration: 1.5 });
+      const currentPos = L.latLng(lat, lng);
+      
+      // Only re-center if tracking is active AND either:
+      // 1. No last center exists
+      // 2. The distance moved is > 100 meters
+      if (isTracking) {
+        const shouldFly = !lastCenter.current || currentPos.distanceTo(lastCenter.current) > 100;
+        
+        if (shouldFly) {
+          map.flyTo([lat, lng], map.getZoom(), { duration: 1.5 });
+          lastCenter.current = currentPos;
+        }
+      }
     }
-  }, [lat, lng, map]);
+  }, [lat, lng, map, isTracking]);
   return null;
 };
 
@@ -140,6 +154,7 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
                 <div style={{ color: '#000' }}>
                   <strong>{vehicle.vehicle_id}</strong><br />
                   Driver: {vehicle.driver_name}<br />
+                  {vehicle.phone && <>Mobile: {vehicle.phone}<br /></>}
                   Speed: {vehicle.speed} km/h<br />
                   Last Update: {new Date(vehicle.timestamp).toLocaleTimeString()}
                 </div>
@@ -193,7 +208,7 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
         )}
 
         {selectedVehicle && (
-          <RecenterMap lat={selectedVehicle.lat} lng={selectedVehicle.lng} />
+          <RecenterMap lat={selectedVehicle.lat} lng={selectedVehicle.lng} isTracking={isTracking} />
         )}
 
         {user.role === 'admin' && (
