@@ -52,14 +52,20 @@ const createStopIcon = () => {
   });
 };
 
-const createViewerIcon = () => {
+const createViewerIcon = (role) => {
+  const isStaff = role === 'admin' || role === 'employee';
+  const color = isStaff ? '#2563eb' : '#3b82f6';
+  
   return L.divIcon({
     className: 'viewer-marker',
     html: `
       <div class="marker-container">
         <div class="blue-dot-pulse"></div>
-        <div class="marker-icon" style="background-color: white; overflow: hidden; padding: 2px; border: 2px solid #2563eb; box-shadow: 0 0 15px rgba(37, 99, 235, 0.8);">
-          <img src="/employee-logo.jpg" style="width: 100%; height: 100%; object-fit: contain; image-rendering: -webkit-optimize-contrast;" alt="Viewer" />
+        <div class="marker-icon" style="background-color: white; overflow: hidden; padding: 2px; border: 2px solid ${color}; box-shadow: 0 0 15px rgba(37, 99, 235, 0.8);">
+          ${isStaff 
+            ? `<img src="/employee-logo.jpg" style="width: 100%; height: 100%; object-fit: contain; image-rendering: -webkit-optimize-contrast;" alt="Viewer" />`
+            : `<img src="/driver-logo.png" style="width: 100%; height: 100%; object-fit: contain; image-rendering: -webkit-optimize-contrast;" alt="Viewer" />`
+          }
         </div>
       </div>
     `,
@@ -157,7 +163,7 @@ const MapView = ({ vehicles, selectedId, user, isTracking, viewerCoords, stops, 
         {viewerCoords && (
           <Marker 
             position={[viewerCoords.lat, viewerCoords.lng]} 
-            icon={createViewerIcon()}
+            icon={createViewerIcon(user?.role)}
             zIndexOffset={1000}
           >
             <Popup><div style={{ color: '#000' }}>You are here</div></Popup>
