@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Crosshair, MapPin } from 'lucide-react';
@@ -43,7 +43,7 @@ const createStopIcon = () => {
       <div class="marker-container">
         <div class="marker-icon" style="background-color: white; overflow: hidden; padding: 2px; border: 2px solid #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);">
           <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ef4444;">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ const createViewerIcon = (role) => {
 
 const RecenterMap = ({ lat, lng, isTracking }) => {
   const map = useMap();
-  const lastCenter = React.useRef(null);
+  const lastCenter = useRef(null);
 
   useEffect(() => {
     if (lat && lng) {
