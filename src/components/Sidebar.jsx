@@ -85,7 +85,7 @@ const Sidebar = ({
             </div>
             <div>
               <h1 style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.025em', lineHeight: 1 }}>EAI BUS TRACKER</h1>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Fleet Management</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Vehicle Management</div>
             </div>
             <button 
               onClick={onLogout} 
@@ -135,7 +135,7 @@ const Sidebar = ({
                 fontWeight: '700', fontSize: '0.8rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
               }}
             >
-              <Truck size={14} /> Fleet
+              <Truck size={14} /> Vehicle
             </button>
             {user.role === 'admin' && (
               <button 
@@ -183,7 +183,7 @@ const Sidebar = ({
           {activeTab === 'fleet' && (
             <>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '0.75rem' }}>
-                Active Fleet ({vehicleList.length})
+                Active Vehicles ({vehicleList.length})
               </div>
               {vehicleList.map((item) => (
                 <div 
