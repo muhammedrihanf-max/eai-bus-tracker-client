@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Shield, User, Truck, Navigation, ArrowRight, ChevronDown, AlertCircle } from 'lucide-react';
+import { Shield, User, Truck, Navigation, ArrowRight, ChevronDown, AlertCircle, Lock } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [role, setRole] = useState(null);
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [vehicleId, setVehicleId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,8 +38,28 @@ const Login = ({ onLogin }) => {
         setError('Cannot reach server. Please try again.');
       }
       setLoading(false);
+    } else if (role === 'admin') {
+      if (!password) return;
+      setLoading(true);
+      try {
+        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+        const res = await fetch(`${serverUrl}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          onLogin({ role: 'admin', name: 'Admin' });
+        } else {
+          setError(data.error || 'Invalid admin password');
+        }
+      } catch {
+        setError('Cannot reach server. Please try again.');
+      }
+      setLoading(false);
     } else {
-      if (!name) return;
+      if (!name && role !== 'admin') return;
       onLogin({ role, name });
     }
   };
@@ -114,7 +135,7 @@ const Login = ({ onLogin }) => {
               <select 
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === 'admin') onLogin({ role: 'admin', name: 'Admin' });
+                  if (val === 'admin') setRole('admin');
                   else if (val === 'employee') onLogin({ role: 'employee', name: 'Staff' });
                   else if (val === 'driver') handleRoleSelect('driver');
                 }}
@@ -157,17 +178,36 @@ const Login = ({ onLogin }) => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
-            <div>
-              <label style={labelStyle}>Driver Name</label>
-              <input 
-                type="text" 
-                placeholder="Enter your registered name"
-                required 
-                value={name}
-                onChange={(e) => { setName(e.target.value); setError(''); }}
-                style={inputStyle}
-              />
-            </div>
+            {role === 'driver' ? (
+              <div>
+                <label style={labelStyle}>Driver Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter your registered name"
+                  required 
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(''); }}
+                  style={inputStyle}
+                />
+              </div>
+            ) : (
+              <div>
+                <label style={labelStyle}>Admin Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="password" 
+                    placeholder="Enter admin password"
+                    required 
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    style={{ ...inputStyle, paddingLeft: '3rem' }}
+                  />
+                  <div style={{ position: 'absolute', left: '1.25rem', top: '1.4rem', color: '#64748b' }}>
+                    <Lock size={18} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.85rem', backgroundColor: 'rgba(239,68,68,0.1)', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid rgba(239,68,68,0.2)' }}>
@@ -179,7 +219,7 @@ const Login = ({ onLogin }) => {
             <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
               <button 
                 type="button" 
-                onClick={() => { setRole(null); setError(''); }}
+                onClick={() => { setRole(null); setError(''); setPassword(''); setName(''); }}
                 style={{ ...submitButtonStyle, background: 'transparent', border: '1px solid #334155', width: 'auto', padding: '1rem' }}
               >
                 Back
@@ -189,7 +229,7 @@ const Login = ({ onLogin }) => {
                 disabled={loading}
                 style={{ ...submitButtonStyle, flex: 1, backgroundColor: loading ? '#475569' : '#3b82f6', border: 'none' }}
               >
-                {loading ? 'Verifying...' : <><span>Continue Tracking</span> <ArrowRight size={18} /></>}
+                {loading ? 'Verifying...' : <><span>{role === 'admin' ? 'Authorize Admin' : 'Continue Tracking'}</span> <ArrowRight size={18} /></>}
               </button>
             </div>
           </form>
