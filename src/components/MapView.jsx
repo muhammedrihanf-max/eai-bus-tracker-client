@@ -31,8 +31,8 @@ const createCustomIcon = (vehicleId, role, vehicles) => {
         </div>
       </div>
     `,
-    iconSize: [52, 52],
-    iconAnchor: [26, 26],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 };
 
