@@ -98,10 +98,12 @@ const Login = ({ onLogin }) => {
       }} />
 
       <div className="glass-panel" style={{
-        padding: '3rem',
+        padding: 'clamp(1.5rem, 5vw, 3rem)',
         borderRadius: '2rem',
         width: 'min(440px, 92vw)',
         textAlign: 'center',
+        maxHeight: 'min(800px, 95vh)',
+        overflowY: 'auto',
         position: 'relative',
         zIndex: 1,
         background: 'rgba(30, 41, 59, 0.7)',
@@ -122,7 +124,7 @@ const Login = ({ onLogin }) => {
           }}>
             <Navigation color="white" size={36} />
           </div>
-          <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.025em' }}>EAI BUS TRACKER</h1>
+          <h1 style={{ color: 'white', fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: '800', letterSpacing: '-0.025em' }}>EAI BUS TRACKER</h1>
           <p style={{ color: '#94a3b8', marginTop: '0.75rem', fontSize: '1.1rem' }}>
             {role ? `Login as ${role.charAt(0).toUpperCase() + role.slice(1)}` : 'Select your workspace profile'}
           </p>
@@ -271,10 +273,11 @@ const inputStyle = {
   border: '1px solid #334155',
   backgroundColor: 'rgba(255, 255, 255, 0.05)',
   color: 'white',
-  fontSize: '1rem',
+  fontSize: '16px', /* Prevent iOS zoom */
   marginTop: '0.5rem',
   outline: 'none',
   transition: 'border-color 0.2s',
+  minHeight: '44px' /* Touch target */
 };
 
 const labelStyle = {
